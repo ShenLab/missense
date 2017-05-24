@@ -9,16 +9,19 @@ from keras.layers import Input, Activation, Lambda, merge
 from keras.layers import Convolution2D, MaxPooling2D
 from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers.advanced_activations import LeakyReLU, PReLU
+from keras.layers.normalization import BatchNormalization
 from keras.optimizers import Adam
 from keras.regularizers import l2
 from keras.utils import np_utils
 from keras import backend as K
 from IPython.display import SVG, display
-from keras.utils.visualize_util import model_to_dot, plot
-
+#from keras.utils.visualize_util import model_to_dot, plot
+from keras.utils.vis_utils import plot_model
 import numpy
 
 import pandas as pd
+
+from random import shuffle
 from scipy import interp
 from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import train_test_split
@@ -53,24 +56,49 @@ class CNN_Model(object):
         self.nb_epoch = nb_epoch
         self.batch_size = batch_size
         self.verbose = verbose
-        self.exclude_cols = {'target', 'CADD_phred', 'Eigen-phred', 'Eigen-PC-phred',
+        self.exclude_cols = {'target', 'CADD_phred', 'xEigen-phred', 'Eigen-PC-phred',
                              'Eigen-PC-raw_rankscore', 'MetaSVM_rankscore',
                              'MetaLR_rankscore', 'M-CAP_rankscore', 'DANN_rankscore',
                              'CADD_raw_rankscore', 'Polyphen2_HVAR_rankscore',
                              'MutationTaster_converted_rankscore',
-                             'xFATHMM_converted_rankscore', 'fathmm-MKL_coding_rankscore',
-                             '#chr', 'pos(1-based)',  'ref', 'alt', 'category',
+                             '#chr', 'pos(1-based)',  'hg19_chr', 'hg19_pos(1-based)',
+                             'ref', 'alt', 'category',
                              'source', 'INFO', 'disease', 'genename',
-                             'pli', 'lofz', 
-                             'x1000Gp3_AF', 'xExAC_AF', 'xpreppi_counts', 'xubiquitination'}
+                             'pli', 'lofz', 'prec', 
+                             'x1000Gp3_AF', 'xExAC_AF', 
+                             's_het', 'xs_het_log', 'xgc_content', 
+                             'xFATHMM_converted_rankscore', 'xfathmm-MKL_coding_rankscore',
+                             'xpreppi_counts', 'xubiquitination'}
 
-    def _load_data(self):
+        # self.exclude_cols = {'target', 'CADD_phred', 'Eigen-phred', 'Eigen-PC-phred',
+        #                      'Eigen-PC-raw_rankscore', 'MetaSVM_rankscore',
+        #                      'MetaLR_rankscore', 'M-CAP_rankscore', 'DANN_rankscore',
+        #                      'CADD_raw_rankscore', 'Polyphen2_HVAR_rankscore',
+        #                      'MutationTaster_converted_rankscore',
+        #                      '#chr', 'pos(1-based)',  'ref', 'alt', 'category',
+        #                      'source', 'INFO', 'disease', 'genename',
+        #                      'xpli', 'xlofz', 
+        #                      'x1000Gp3_AF', 'xExAC_AF',
+        #                      'xFATHMM_converted_rankscore', 'xfathmm-MKL_coding_rankscore',
+        #                      'xpreppi_counts', 'xubiquitination'}
+    def _load_data(self, sub_sample=False):
         '''load data are not in exclude_cols into self.X_pred, 
            feathers to self.X_train
            target in self.y is exist
         '''
         print('Loading training data...')
         self.data = pd.read_csv(self.fname)
+
+        if sub_sample:
+            pos = self.data[self.data['target']==1]
+            neg = self.data[self.data['target']==0]
+            
+            if pos.shape[0] < neg.shape[0]:
+                neg = neg.sample(pos.shape[0])
+            else:
+                pos = pos.sample(neg.shape[0])
+            self.data = pd.concat([pos, neg], ignore_index=True)
+            print pos.shape, neg.shape
         cols = [col for col in self.data.columns if col not in self.exclude_cols]
         print '{} cols used: {}'.format(len(cols), cols)
         self.input_shape = (len(cols), 1, 1)
@@ -137,12 +165,12 @@ class CNN_Model(object):
         if verbose:
             # model summary and save arch
             print self.model.summary()
-            plot(self.model, show_shapes=True,
+            plot_model(self.model, show_shapes=True,
                  to_file='../models/' + self.name + '.png')
 
-    def train(self):
+    def train(self, sub_sample):
 
-        self._load_data()
+        self._load_data(sub_sample)
         self._train_test_split()
         self._init_model(verbose=True)
 
@@ -153,13 +181,13 @@ class CNN_Model(object):
         tb = TensorBoard(log_dir='./logs')
         best_weights_filepath = '../models/' + self.name + \
             '-weights-improvement-{epoch:02d}-{val_acc:.2f}.hdf5'
-        checkpoint = ModelCheckpoint(best_weights_filepath, monitor='val_acc',
-                                     verbose=self.verbose, save_best_only=True, mode='auto')  # mode max?
+        checkpoint = ModelCheckpoint(best_weights_filepath, monitor='val_loss',
+                                     verbose=self.verbose, save_best_only=True, mode='auto')  # mode max? val_loss val_acc
 
         print('Fitting  model...')
         hist_model = self.model.fit(self.X_train, self.y_train,
                                     batch_size=self.batch_size,
-                                    nb_epoch=self.nb_epoch,
+                                    epochs=self.nb_epoch,
                                     validation_data=(
                                         self.X_test, self.y_test),
                                     shuffle=True,
@@ -255,7 +283,7 @@ class CNN_Model(object):
         # get predicted probability
         if self.train_flag:
             self.data['training'] = 1
-            self.data.ix[self.idx_test, 'training'] = 0
+            self.data.loc[self.idx_test, 'training'] = 0
             proba = self.model.predict(self.X_pred, batch_size=32)
         else:
             self._load_data()
@@ -284,219 +312,11 @@ class CNN_Model(object):
         self.data = pd.concat([self.data, df], axis=1)
 
 
-class CNN_Model_Mode2(CNN_Model):
-    def __init__(self, input_shape=(20, 1, 1), weights_path=None, name='cnn_model_mode2',
+class CNN_Model_Mode6(CNN_Model):
+    def __init__(self, input_shape=(20, 1, 1), weights_path=None, name='resi_model_mode1',
                  train_flag=True, nb_epoch=50, batch_size=64, verbose=0,
                  fname='../data/input_data.csv', f_out='../data/output_data.csv'):
-        super(CNN_Model_Mode2, self).__init__(input_shape=input_shape, weights_path=weights_path, name=name,
-                                              train_flag=train_flag, nb_epoch=nb_epoch, batch_size=batch_size, verbose=verbose,
-                                              fname=fname, f_out=f_out)
-
-    def _init_model(self, verbose):
-        # number of convolutional filters to use
-        nb_filters = 32
-        # size of pooling area for max pooling
-        pool_size = (2, 1)
-        # convolution kernel size
-        kernel_size = (3, 1)
-
-        input_ = Input(shape=self.input_shape)
-        conv1 = Convolution2D(nb_filters, kernel_size[0], kernel_size[1],
-                              border_mode='valid', dim_ordering='tf',
-                              activation='relu', init='glorot_uniform', name='conv1')(input_)
-
-        conv2 = Convolution2D(nb_filters, kernel_size[0], kernel_size[1],
-                              border_mode='valid', dim_ordering='tf',
-                              activation='relu', init='glorot_uniform', name='conv2')(conv1)
-
-        maxpool1 = MaxPooling2D(pool_size=pool_size,
-                                dim_ordering='tf', name='maxpool1')(conv2)
-
-        dropout1 = Dropout(0.25, name='dropout1')(maxpool1)
-
-        flatten = Flatten(name='flatten')(dropout1)
-
-        fc1 = Dense(128, name='fc1')(flatten)
-        fc2 = Dense(4, name='fc2')(fc1)
-
-        # the oder needs modified, 0 for negative, 1,2,3 for positive
-        select1 = Lambda(lambda x: x[:, :-1], name='select1')(fc2)
-        select2 = Lambda(lambda x: x[:, -1:], name='select2')(fc2)
-        damaging = Dense(1, name='damaging')(select1)
-        benign = Dense(1, name='benign')(select2)
-        mode_action = merge([damaging, benign], mode='concat', concat_axis=1)
-        dense1 = Dense(1, name='dense1')(mode_action)
-        act2 = Activation('sigmoid', name='act2')(dense1)
-        self.model = Model(input=input_, output=act2)
-        self.model.compile(loss='binary_crossentropy',
-                           optimizer='adam',
-                           metrics=['accuracy'])
-
-        if self.weights_path:
-            self.model.load_weights(self.weights_path)
-
-        if verbose:
-            # model summary and save arch
-            print self.model.summary()
-            plot(self.model, show_shapes=True,
-                 to_file='../models/' + self.name + '.png')
-
-
-class CNN_Model_Mode3(CNN_Model):
-    def __init__(self, input_shape=(20, 1, 1), weights_path=None, name='cnn_model_mode3',
-                 train_flag=True, nb_epoch=50, batch_size=64, verbose=0,
-                 fname='../data/input_data.csv', f_out='../data/output_data.csv'):
-        super(CNN_Model_Mode3, self).__init__(input_shape=input_shape, weights_path=weights_path, name=name,
-                                              train_flag=train_flag, nb_epoch=nb_epoch, batch_size=batch_size, verbose=verbose,
-                                              fname=fname, f_out=f_out)
-
-    def _init_model(self, verbose):
-        # number of convolutional filters to use
-        nb_filters = 32
-        # size of pooling area for max pooling
-        pool_size = (2, 1)
-        # convolution kernel size
-        kernel_size = (3, 1)
-
-        input_ = Input(shape=self.input_shape, name='input')
-        conv1 = Convolution2D(nb_filters, kernel_size[0], kernel_size[1],
-                              border_mode='valid', dim_ordering='tf',
-                              activation='relu', init='glorot_uniform', name='pos_conv1')(input_)
-        conv2 = Convolution2D(nb_filters, kernel_size[0], kernel_size[1],
-                              border_mode='valid', dim_ordering='tf',
-                              activation='relu', init='glorot_uniform', name='pos_conv2')(conv1)
-        maxpool1 = MaxPooling2D(pool_size=pool_size,
-                                dim_ordering='tf', name='pos_maxpool1')(conv2)
-        dropout1 = Dropout(0.25, name='pos_dropout1')(maxpool1)
-        flatten = Flatten(name='pos_flatten')(dropout1)
-        fc1 = Dense(128, name='pos_fc1')(flatten)
-       # act1 = Activation('relu', name='pos_act1')(fc1)
-        act1 = LeakyReLU(alpha=.001, name='pos_act1')(fc1)
-
-        dropout2 = Dropout(0.25, name='pos_dropout2')(act1)
-        dense1 = Dense(3, name='pos_dense1')(dropout2)
-
-        #neg_input_ = Input(shape=self.input_shape, name='input')
-        neg_conv1 = Convolution2D(nb_filters, kernel_size[0], kernel_size[1],
-                                  border_mode='valid', dim_ordering='tf',
-                                  activation='relu', init='glorot_uniform', name='neg_conv1')(input_)
-        neg_conv2 = Convolution2D(nb_filters, kernel_size[0], kernel_size[1],
-                                  border_mode='valid', dim_ordering='tf',
-                                  activation='relu', init='glorot_uniform', name='neg_conv2')(neg_conv1)
-        neg_maxpool1 = MaxPooling2D(pool_size=pool_size,
-                                    dim_ordering='tf', name='neg_maxpool1')(neg_conv2)
-        neg_dropout1 = Dropout(0.25, name='neg_dropout1')(neg_maxpool1)
-        neg_flatten = Flatten(name='neg_flatten')(neg_dropout1)
-        neg_fc1 = Dense(128, name='neg_fc1')(neg_flatten)
-        #neg_act1 = Activation('relu', name='neg_act1')(neg_fc1)
-        neg_act1 = LeakyReLU(alpha=.001, name='neg_act1')(neg_fc1)
-
-        neg_dropout2 = Dropout(0.25, name='neg_dropout2')(neg_act1)
-        neg_dense1 = Dense(1, name='neg_dense1')(neg_dropout2)
-
-        # negative goes first
-        mode_action = merge([neg_dense1, dense1], mode='concat', concat_axis=1)
-        dense1 = Dense(1, name='dense1')(mode_action)
-        act2 = Activation('sigmoid', name='act2')(dense1)
-
-        #optimizer = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-        self.model = Model(input=input_, output=act2)
-        self.model.compile(loss='binary_crossentropy',
-                           optimizer='adam',
-                           metrics=['accuracy'])
-
-        if self.weights_path:
-            self.model.load_weights(self.weights_path)
-
-        if verbose:
-            # model summary and save arch
-            print self.model.summary()
-            plot(self.model, show_shapes=True,
-                 to_file='../models/' + self.name + '.png')
-
-
-class CNN_Model_Mode4(CNN_Model):
-    def __init__(self, input_shape=(20, 1, 1), weights_path=None, name='cnn_model_mode4',
-                 train_flag=True, nb_epoch=50, batch_size=64, verbose=0,
-                 fname='../data/input_data.csv', f_out='../data/output_data.csv'):
-        super(CNN_Model_Mode4, self).__init__(input_shape=input_shape, weights_path=weights_path, name=name,
-                                              train_flag=train_flag, nb_epoch=nb_epoch, batch_size=batch_size, verbose=verbose,
-                                              fname=fname, f_out=f_out)
-
-    def _init_model(self, verbose):
-        # number of convolutional filters to use
-        nb_filters = 32
-        # size of pooling area for max pooling
-        pool_size = (2, 1)
-        # convolution kernel size
-        kernel_size = (3, 1)
-
-        input_ = Input(shape=self.input_shape, name='input')
-        conv1 = Convolution2D(nb_filters, kernel_size[0], kernel_size[1],
-                              border_mode='valid', dim_ordering='tf',
-                              init='glorot_uniform', name='pos_conv1')(input_)
-        conv1_act1 = LeakyReLU()(conv1)
-        conv2 = Convolution2D(nb_filters, kernel_size[0], kernel_size[1],
-                              border_mode='valid', dim_ordering='tf',
-                              init='glorot_uniform', name='pos_conv2')(conv1_act1)
-        conv2_act2 = LeakyReLU()(conv2)
-        maxpool1 = MaxPooling2D(pool_size=pool_size,
-                                dim_ordering='tf', name='pos_maxpool1')(conv2_act2)
-        dropout1 = Dropout(0.5, name='pos_dropout1')(maxpool1)
-        flatten = Flatten(name='pos_flatten')(dropout1)
-        fc1 = Dense(256, name='pos_fc1', W_regularizer=l2(0.01))(flatten)
-       # act1 = Activation('relu', name='pos_act1')(fc1)
-        act1 = LeakyReLU(alpha=.001, name='pos_act1')(fc1)
-
-        dropout2 = Dropout(0.5, name='pos_dropout2')(act1)
-        dense1 = Dense(3, name='pos_dense1')(dropout2)
-
-        #neg_input_ = Input(shape=self.input_shape, name='input')
-        neg_conv1 = Convolution2D(nb_filters, kernel_size[0], kernel_size[1],
-                                  border_mode='valid', dim_ordering='tf',
-                                  init='glorot_uniform', name='neg_conv1')(input_)
-        neg_conv1_act1 = LeakyReLU()(neg_conv1)
-        neg_conv2 = Convolution2D(nb_filters, kernel_size[0], kernel_size[1],
-                                  border_mode='valid', dim_ordering='tf',
-                                  init='glorot_uniform', name='neg_conv2')(neg_conv1_act1)
-        neg_conv2_act2 = LeakyReLU()(neg_conv2)
-        neg_maxpool1 = MaxPooling2D(pool_size=pool_size,
-                                    dim_ordering='tf', name='neg_maxpool1')(neg_conv2_act2)
-        neg_dropout1 = Dropout(0.5, name='neg_dropout1')(neg_maxpool1)
-        neg_flatten = Flatten(name='neg_flatten')(neg_dropout1)
-        neg_fc1 = Dense(256, name='neg_fc1',
-                        W_regularizer=l2(0.01),)(neg_flatten)
-        #neg_act1 = Activation('relu', name='neg_act1')(neg_fc1)
-        neg_act1 = LeakyReLU(alpha=.001, name='neg_act1')(neg_fc1)
-
-        neg_dropout2 = Dropout(0.5, name='neg_dropout2')(neg_act1)
-        neg_dense1 = Dense(1, name='neg_dense1')(neg_dropout2)
-
-        # negative goes first
-        mode_action = merge([neg_dense1, dense1], mode='concat', concat_axis=1)
-        dense1 = Dense(1, name='dense1')(mode_action)
-        act2 = Activation('sigmoid', name='act2')(dense1)
-
-        #optimizer = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-        self.model = Model(input=input_, output=act2)
-        self.model.compile(loss='binary_crossentropy',
-                           optimizer='Nadam',
-                           metrics=['accuracy'])
-
-        if self.weights_path:
-            self.model.load_weights(self.weights_path)
-
-        if verbose:
-            # model summary and save arch
-            print self.model.summary()
-            plot(self.model, show_shapes=True,
-                 to_file='../models/' + self.name + '.png')
-
-class CNN_Model_Mode5(CNN_Model):
-    def __init__(self, input_shape=(20, 1, 1), weights_path=None, name='cnn_model_mode5',
-                 train_flag=True, nb_epoch=50, batch_size=64, verbose=0,
-                 fname='../data/input_data.csv', f_out='../data/output_data.csv'):
-        super(CNN_Model_Mode5, self).__init__(input_shape=input_shape, weights_path=weights_path, name=name,
+        super(CNN_Model_Mode6, self).__init__(input_shape=input_shape, weights_path=weights_path, name=name,
                                               train_flag=train_flag, nb_epoch=nb_epoch, batch_size=batch_size, verbose=verbose,
                                               fname=fname, f_out=f_out)
 
@@ -508,57 +328,24 @@ class CNN_Model_Mode5(CNN_Model):
         # convolution kernel size
         kernel_size = (3, 1)
 
+
         input_ = Input(shape=self.input_shape, name='input')
-        conv1 = Convolution2D(nb_filters, kernel_size[0], kernel_size[1],
-                              border_mode='valid', dim_ordering='tf',
-                              init='glorot_uniform', name='pos_conv1')(input_)
-        conv1_act1 = LeakyReLU()(conv1)
-        conv2 = Convolution2D(nb_filters, kernel_size[0], kernel_size[1],
-                              border_mode='valid', dim_ordering='tf',
-                              init='glorot_uniform', name='pos_conv2')(conv1_act1)
-        conv2_act2 = LeakyReLU()(conv2)
-        maxpool1 = MaxPooling2D(pool_size=pool_size,
-                                dim_ordering='tf', name='pos_maxpool1')(conv2_act2)
-        dropout1 = Dropout(0.5, name='pos_dropout1')(maxpool1)
-        flatten = Flatten(name='pos_flatten')(dropout1)
-        fc1 = Dense(256, name='pos_fc1', W_regularizer=l2(0.01))(flatten)
-       # act1 = Activation('relu', name='pos_act1')(fc1)
-        act1 = LeakyReLU(alpha=.001, name='pos_act1')(fc1)
+        x = Convolution2D(nb_filters, kernel_size[0], kernel_size[1], border_mode="same", activation="relu")(input_)
+        for _ in range(2):
+            y = Convolution2D(nb_filters, kernel_size[0], kernel_size[1], border_mode="same", activation="relu")(x)
+            y = Convolution2D(nb_filters, kernel_size[0], kernel_size[1], border_mode="same")(y)
+            x = merge([x, y], mode="sum")
+            x = Activation("relu")(x)
+            x = MaxPooling2D(pool_size=pool_size)(x)
 
-        dropout2 = Dropout(0.2, name='pos_dropout2')(act1)
-        dense1 = Dense(3, name='pos_dense1')(dropout2)
-        dense2 = Dense(1, name='pos_dense2')(dense1)
+        x = Flatten()(x)
+        x = Dense(512, activation="relu")(x)
+        x = Dense(1, name='dense1')(x)
+        act2 = Activation('sigmoid', name='act2')(x)
 
-        #neg_input_ = Input(shape=self.input_shape, name='input')
-        neg_conv1 = Convolution2D(nb_filters, kernel_size[0], kernel_size[1],
-                                  border_mode='valid', dim_ordering='tf',
-                                  init='glorot_uniform', name='neg_conv1')(input_)
-        neg_conv1_act1 = LeakyReLU()(neg_conv1)
-        neg_conv2 = Convolution2D(nb_filters, kernel_size[0], kernel_size[1],
-                                  border_mode='valid', dim_ordering='tf',
-                                  init='glorot_uniform', name='neg_conv2')(neg_conv1_act1)
-        neg_conv2_act2 = LeakyReLU()(neg_conv2)
-        neg_maxpool1 = MaxPooling2D(pool_size=pool_size,
-                                    dim_ordering='tf', name='neg_maxpool1')(neg_conv2_act2)
-        neg_dropout1 = Dropout(0.5, name='neg_dropout1')(neg_maxpool1)
-        neg_flatten = Flatten(name='neg_flatten')(neg_dropout1)
-        neg_fc1 = Dense(256, name='neg_fc1',
-                        W_regularizer=l2(0.01),)(neg_flatten)
-        #neg_act1 = Activation('relu', name='neg_act1')(neg_fc1)
-        neg_act1 = LeakyReLU(alpha=.001, name='neg_act1')(neg_fc1)
-
-        neg_dropout2 = Dropout(0.5, name='neg_dropout2')(neg_act1)
-        neg_dense1 = Dense(1, name='neg_dense1')(neg_dropout2)
-
-        # negative goes first
-        mode_action = merge([neg_dense1, dense2], mode='concat', concat_axis=1)
-        dense1 = Dense(1, name='dense1')(mode_action)
-        act2 = Activation('sigmoid', name='act2')(dense1)
-
-        #optimizer = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
         self.model = Model(input=input_, output=act2)
         self.model.compile(loss='binary_crossentropy',
-                           optimizer='Nadam',
+                           optimizer='adam',
                            metrics=['accuracy'])
 
         if self.weights_path:
@@ -567,6 +354,6 @@ class CNN_Model_Mode5(CNN_Model):
         if verbose:
             # model summary and save arch
             print self.model.summary()
-            plot(self.model, show_shapes=True,
+            plot_model(self.model, show_shapes=True,
                  to_file='../models/' + self.name + '.png')
 
