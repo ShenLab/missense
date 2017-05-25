@@ -1,9 +1,5 @@
 import sys
-DROPBOX = '/Users/hongjian/Dropbox (CGC)/'
-sys.path.append(DROPBOX + 'analysis/info/')
-sys.path.append(DROPBOX + 'analysis/utils/')
-from info import *
-from utils import *
+
 
 
 class MutationBackground(object):
@@ -49,7 +45,7 @@ class MutationBackground(object):
             for line in f:
                 lst = line.strip().split()
                 info = dict(zip(head, lst))
-                gene = gene_trans(info['Gene'])
+                gene = info['Gene']
                 rate = {}
                 for mut_type in self.mut_type:
                     mut_type_converted = self._convert(mut_type)
