@@ -17,7 +17,10 @@ class MutationBackground(object):
                          '0.55',   '0.6',   '0.65',
                          '0.7',   '0.75',   '0.8',   '0.85',   '0.9',   '0.56'}
 
-        self._init_rate_Na(fname)
+        self.exclude_col = {'Gene', '#Reference', 'GeneVersion', 'Transcript.TranscriptVersion', 'ExonCount', 
+                            'Chr', 'StartPos', 'EndPos', 'GeneName', 'transcript'}
+
+        self._init_rate(fname)
 
     def _convert(self, mutation_type):
         ''' used for convert some cols name difference from input file
@@ -37,7 +40,8 @@ class MutationBackground(object):
 
         return mutation_type_syn.get(mutation_type, mutation_type)
 
-    def _init_rate_Na(self, fname):
+
+    def _init_rate(self, fname):
         """inti mutation rate using Na's format, used the longest exon as final reslut."""
         self.rate = {}
         with open(fname) as f:
@@ -47,9 +51,11 @@ class MutationBackground(object):
                 info = dict(zip(head, lst))
                 gene = info['Gene']
                 rate = {}
-                for mut_type in self.mut_type:
-                    mut_type_converted = self._convert(mut_type)
-                    rate[mut_type_converted] = float(info[mut_type])
+                for mut_type in head:
+                    if mut_type not in self.exclude_col:
+                        mut_type_converted = self._convert(mut_type)
+                        rate[mut_type_converted] = float(info[mut_type])
+                        
                 if gene not in self.rate:
                     self.rate[gene] = rate
                 else:
@@ -65,5 +71,5 @@ class MutationBackground(object):
                     exp += float(self.rate[gene][mut_type]) * 2
         else:
             if verbose:
-                print 'do not have rate for {}'.format(mut_type)
+                print 'do not have rate for {}, use control instead'.format(mut_type)
         return exp
