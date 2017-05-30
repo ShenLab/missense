@@ -3,6 +3,7 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
+import datetime
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
 from keras.models import Sequential, Model
 from keras.layers import Input, Activation, Lambda, merge
@@ -56,6 +57,9 @@ class CNN_Model(object):
         self.nb_epoch = nb_epoch
         self.batch_size = batch_size
         self.verbose = verbose
+        
+        self.run_id = datetime.datetime.now().strftime('%Y%m%d-%H.%M.%S')
+        # ones with x are not exclude
         self.exclude_cols = {'target', 'CADD_phred', 'xEigen-phred', 'Eigen-PC-phred',
                              'Eigen-PC-raw_rankscore', 'MetaSVM_rankscore',
                              'MetaLR_rankscore', 'M-CAP_rankscore', 'DANN_rankscore',
@@ -100,6 +104,8 @@ class CNN_Model(object):
             self.data = pd.concat([pos, neg], ignore_index=True)
             print pos.shape, neg.shape
         cols = [col for col in self.data.columns if col not in self.exclude_cols]
+        self.cols = cols
+        
         print '{} cols used: {}'.format(len(cols), cols)
         self.input_shape = (len(cols), 1, 1)
 
@@ -165,8 +171,15 @@ class CNN_Model(object):
         if verbose:
             # model summary and save arch
             print self.model.summary()
-            plot_model(self.model, show_shapes=True,
-                 to_file='../models/' + self.name + '.png')
+            outname = '_'.join(['../models/'+self.name, str(self.input_shape[0]), self.run_id,  'cols.png'])
+            plot_model(self.model, show_shapes=True, to_file=outname)
+            col_name = '_'.join(['../models/'+self.name, str(self.input_shape[0]), self.run_id,  'col_names.txt'])
+            self._save_cols(col_name)
+            
+    def _save_cols(self, save_adr):
+        with open(save_adr, 'w') as fw:
+            for col in self.cols:
+                fw.write(col +'\n')
 
     def train(self, sub_sample):
 
@@ -354,6 +367,8 @@ class CNN_Model_Mode6(CNN_Model):
         if verbose:
             # model summary and save arch
             print self.model.summary()
-            plot_model(self.model, show_shapes=True,
-                 to_file='../models/' + self.name + '.png')
+            outname = '../models/'+self.name + '_' + str(self.input_shape[0]) + 'cols'+ '_' + self.run_id +'.png'
+            plot_model(self.model, show_shapes=True, to_file=outname)
+            col_name = '../models/'+self.name + '_' + str(self.input_shape[0]) + 'cols'+ '_' + self.run_id +'.txt'
+            self._save_cols(col_name)
 
