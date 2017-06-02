@@ -57,9 +57,12 @@ class CNN_Model(object):
         self.nb_epoch = nb_epoch
         self.batch_size = batch_size
         self.verbose = verbose
+<<<<<<< HEAD
         
         self.run_id = datetime.datetime.now().strftime('%Y%m%d-%H.%M.%S')
         # ones with x are not exclude
+=======
+>>>>>>> e591edc6fda715c53a768b0cdea48c2a13ac5152
         self.exclude_cols = {'target', 'CADD_phred', 'xEigen-phred', 'Eigen-PC-phred',
                              'Eigen-PC-raw_rankscore', 'MetaSVM_rankscore',
                              'MetaLR_rankscore', 'M-CAP_rankscore', 'DANN_rankscore',
@@ -171,6 +174,7 @@ class CNN_Model(object):
         if verbose:
             # model summary and save arch
             print self.model.summary()
+<<<<<<< HEAD
             outname = '_'.join(['../models/'+self.name, str(self.input_shape[0]), self.run_id,  'cols.png'])
             plot_model(self.model, show_shapes=True, to_file=outname)
             col_name = '_'.join(['../models/'+self.name, str(self.input_shape[0]), self.run_id,  'col_names.txt'])
@@ -180,6 +184,10 @@ class CNN_Model(object):
         with open(save_adr, 'w') as fw:
             for col in self.cols:
                 fw.write(col +'\n')
+=======
+            plot_model(self.model, show_shapes=True,
+                 to_file='../models/' + self.name + '.png')
+>>>>>>> e591edc6fda715c53a768b0cdea48c2a13ac5152
 
     def train(self, sub_sample):
 
@@ -367,8 +375,13 @@ class CNN_Model_Mode6(CNN_Model):
         if verbose:
             # model summary and save arch
             print self.model.summary()
+<<<<<<< HEAD
             outname = '../models/'+self.name + '_' + str(self.input_shape[0]) + 'cols'+ '_' + self.run_id +'.png'
             plot_model(self.model, show_shapes=True, to_file=outname)
             col_name = '../models/'+self.name + '_' + str(self.input_shape[0]) + 'cols'+ '_' + self.run_id +'.txt'
             self._save_cols(col_name)
+=======
+            plot_model(self.model, show_shapes=True,
+                 to_file='../models/' + self.name + '.png')
+>>>>>>> e591edc6fda715c53a768b0cdea48c2a13ac5152
 
