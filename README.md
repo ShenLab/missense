@@ -14,4 +14,6 @@ code/4_get_MVP_prediction_for_all_missense_variants.ipynb: Generate MVP raw scor
 
 code/models.py: functions used in MVP model.
 
-Precomputed MVP score (hg19): https://www.dropbox.com/s/bueatvqnkvqcb54/MVP_scores_hg19.txt.bz2?dl=0
+# Precomputed MVP score (hg19)
+
+https://www.dropbox.com/s/bueatvqnkvqcb54/MVP_scores_hg19.txt.bz2?dl=0
