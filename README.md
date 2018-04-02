@@ -16,4 +16,4 @@ code/models.py: functions used in MVP model.
 
 # Precomputed MVP score (hg19)
 
-https://www.dropbox.com/s/bueatvqnkvqcb54/MVP_scores_hg19.txt.bz2?dl=0
+https://www.dropbox.com/s/d9we7gx42b7yatg/MVP_score_hg19.txt.bz2?dl=0
