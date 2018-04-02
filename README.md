@@ -1,17 +1,19 @@
-# missense
+# MVP: predicting pathogenicity of missense variants by deep learning
+
+This repository contains codes to train MVP model and predict missense variants pathogenicity. 
 
 
-generate file for training and testing:
-run notebook: process_data_fromWGSAoutput.ipynb
+# code and tutorials: 
+code/1_prepare_files_for_MVP.ipynb: Generate missense variants features for training and prediction for MVP models.
 
-Train model:
-```python -u train_models.py```
+code/2_train_MVP_models.ipynb: Train MVP models with selected positives and negatives missense variants.
 
-prediction:
-run notebook: prediction.ipynb
+code/3_MVP_prediction.ipynb: Generate MVP raw scores for input variants. 
 
-performance analysis:
-run notebook: methods comparison.ipynb
+code/4_get_MVP_prediction_for_all_missense_variants.ipynb: Generate MVP raw scores for all rare missense variants, convert raw score to rank percentile scores.
 
+code/models.py: functions used in MVP model.
 
-Precomputed MVP score (hg19): https://www.dropbox.com/s/bueatvqnkvqcb54/MVP_scores_hg19.txt.bz2?dl=0
+# Precomputed MVP score (hg19)
+
+https://www.dropbox.com/s/bueatvqnkvqcb54/MVP_scores_hg19.txt.bz2?dl=0
