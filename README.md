@@ -17,3 +17,9 @@ code/models.py: functions used in MVP model.
 # Precomputed MVP score (hg19)
 
 https://www.dropbox.com/s/d9we7gx42b7yatg/MVP_score_hg19.txt.bz2?dl=0
+
+# citation
+This work is described in a preprint manuscript currently under peer-review:
+
+Qi H*, Chen C*, Zhang H, Long JJ, Chung WK, Guan Y, Shen Y. (2018) MVP: predicting pathogenicity of missense variants by deep learning. bioRxiv, 259390 
+https://www.biorxiv.org/content/early/2018/04/02/259390
