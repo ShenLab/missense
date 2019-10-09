@@ -1,0 +1,11 @@
+{
+    "cv":10,
+    "gene_type":"HIS",
+    "train":"data/input_data0508.HIS.csv",
+    "test":{
+        "cancer":"data/cancer_Discover.final0302.HIS.reformat.cnn.csv",
+        "asd":"denovo/asd_HIS.csv",
+        "chd":"denovo/chd_HIS.csv",
+        "control":"denovo/control_HIS.csv"
+    }
+}
