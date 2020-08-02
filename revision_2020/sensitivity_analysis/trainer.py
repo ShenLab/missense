@@ -74,12 +74,13 @@ class Trainer(object):
                   validation_data=val_data,
                   callbacks=[early_stop_callback])
 
-        model_path = f'{self.train_config["base_dir"]}/best_model.h5'
+        model_path = f'{self.train_config["base_dir"]}/best_model_{self.gene_type}.h5'
         model.save(model_path)
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, required=True)
+    parser.add_argument('--base_dir', type=str, required=True)
     parser.add_argument('--gene_type', type=str, required=True) 
     args = parser.parse_args()
 
@@ -87,7 +88,7 @@ def main():
         config = json.load(f)
 
     config['model']['gene_type'] = args.gene_type
-
+    config['train']['base_dir'] = args.base_dir
 
     seed=2020
     np.random.seed(seed)

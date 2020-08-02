@@ -1,0 +1,17 @@
+{
+    "train": {
+        "batch_size": 64,
+        "optimizer": "adam"
+    },
+    "model": {
+        "block_num": 8,
+	"filters":32,
+	"kernel_size":3
+    },
+    "input": {
+        "train": {
+            "HIS": "../data/input_data0508.HIS.csv",
+            "HS": "../data/input_data0508.HS.csv"
+        }
+    }
+}

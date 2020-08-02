@@ -42,3 +42,11 @@ def get_train_valiate(input_config, gene_type):
         x, y, indices, test_size=0.2, random_state=42)
 
     return (X_train, y_train), (X_test, y_test)
+
+def get_test(input_path, gene_type):
+    df = pd.read_csv(input_path)
+    if gene_type == 'HIS':
+        names = HIS_fea_names
+    else:
+        names = HS_fea_names
+    return df[names].values, df['var_id'].values
