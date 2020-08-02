@@ -4,7 +4,7 @@
         "optimizer": "adam"
     },
     "model": {
-        "block_num": 16,
+        "block_num": 4,
 	"filters":32,
 	"kernel_size":3
     },

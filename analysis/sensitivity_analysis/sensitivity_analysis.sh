@@ -17,41 +17,41 @@ run() {
     exp_dir=${2}
     block_num=${3}
     mkdir -p ${exp_dir}
-    #for gene_type in HIS HS
-    #do
-    #    python ./trainer.py \
-    #        --config ${config} \
-    #        --base_dir ${exp_dir} \
-    #        --gene_type ${gene_type}
-    #    model_path=${exp_dir}/best_model_${gene_type}.h5
-    #    python ./predictor.py \
-    #        --input_path ../data/sample_${gene_type}_SNV.csv \
-    #        --output_path ${exp_dir}/sample_${gene_type}_pred.csv \
-    #        --gene_type ${gene_type} \
-    #        --model_path ${model_path} 
-    #    sample_path=${exp_dir}/sample_${gene_type}_pred.csv
-    #    for data in ASD CHD Control
-    #    do
-    #        data_path=${data}_${gene_type}_path
-    #        data_path=${!data_path}
-    #        output_path=${exp_dir}/${data}_${gene_type}_pred.csv
-    #        python ./predictor.py \
-    #            --input_path ${data_path} \
-    #            --output_path ${output_path} \
-    #            --gene_type ${gene_type} \
-    #            --model_path ${model_path}
-    #        python calc_rank_score.py \
-    #            --input_path ${output_path} \
-    #            --sample_path ${sample_path}
-    #    done
-    #done
+    for gene_type in HIS HS
+    do
+        python ./trainer.py \
+            --config ${config} \
+            --base_dir ${exp_dir} \
+            --gene_type ${gene_type}
+        model_path=${exp_dir}/best_model_${gene_type}.h5
+        python ./predictor.py \
+            --input_path ../data/sample_${gene_type}_SNV.csv \
+            --output_path ${exp_dir}/sample_${gene_type}_pred.csv \
+            --gene_type ${gene_type} \
+            --model_path ${model_path} 
+        sample_path=${exp_dir}/sample_${gene_type}_pred.csv
+        for data in ASD CHD Control
+        do
+            data_path=${data}_${gene_type}_path
+            data_path=${!data_path}
+            output_path=${exp_dir}/${data}_${gene_type}_pred.csv
+            python ./predictor.py \
+                --input_path ${data_path} \
+                --output_path ${output_path} \
+                --gene_type ${gene_type} \
+                --model_path ${model_path}
+            python calc_rank_score.py \
+                --input_path ${output_path} \
+                --sample_path ${sample_path}
+        done
+    done
 
-    #for data in ASD CHD Control
-    #do
-    #    python ./combine_HIS_HS.py ${exp_dir}/${data}_HIS_pred.rank.csv \
-    #        ${exp_dir}/${data}_HS_pred.rank.csv \
-    #        ${exp_dir}/${data}_All_pred.rank.csv
-    #done
+    for data in ASD CHD Control
+    do
+        python ./combine_HIS_HS.py ${exp_dir}/${data}_HIS_pred.rank.csv \
+            ${exp_dir}/${data}_HS_pred.rank.csv \
+            ${exp_dir}/${data}_All_pred.rank.csv
+    done
     input_CHD_path=${exp_dir}/CHD_All_pred.rank.csv
     input_ASD_path=${exp_dir}/ASD_All_pred.rank.csv
     input_Control_path=${exp_dir}/Control_All_pred.rank.csv
