@@ -13,13 +13,13 @@ sample_HS_path='../data/sample_HS_SNV.csv'
 
 
 run() {
-    cofing=${1}
+    config=${1}
     exp_dir=${2}
     mkdir -p ${exp_dir}
     for gene_type in HIS HS
     do
         python ./trainer.py \
-            --config config.json \
+            --config ${config} \
             --base_dir ${exp_dir} \
             --gene_type ${gene_type}
         model_path=${exp_dir}/best_model_${gene_type}.h5

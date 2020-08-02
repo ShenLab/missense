@@ -28,11 +28,12 @@ class Trainer(object):
         activation = 'relu'
         kernel_size = self.model_config.get('kernel_size', 3)
         filters = self.model_config.get('filters', 32)
-        block_num = self.model_config.get('block_num', )
+        block_num = self.model_config.get('block_num', 2)
 
         input_ = Input(shape=(self.feature_dim, 1))
         x = Conv1D(filters, kernel_size, padding='same',
                    activation=activation)(input_)
+        print('block', block_num)
         for _ in range(block_num):
             y = Conv1D(filters,
                        kernel_size,
@@ -53,7 +54,7 @@ class Trainer(object):
 
     def train(self):
         model = self._build_model()
-        #model.summary()
+        model.summary()
         model.compile(loss='binary_crossentropy',
                       optimizer='adam',
                       metrics=['accuracy'])
