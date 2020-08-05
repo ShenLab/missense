@@ -8,11 +8,11 @@ def predict(model_path, gene_type, input_path, output_path):
     model = tf.keras.models.load_model(model_path)
     model.summary()
 
-    x, var_id = dataset.get_test(input_path, gene_type)
+    x, af, var_id = dataset.get_test(input_path, gene_type)
     pred = model.predict(x)
     pred = np.squeeze(pred, axis=1)
 
-    df = pd.DataFrame({'var_id': var_id, 'pred': pred})
+    df = pd.DataFrame({'var_id': var_id, 'pred': pred, 'gnomad_exome':af})
     df.to_csv(output_path, index=False)
 
 

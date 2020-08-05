@@ -1,7 +1,9 @@
 {
     "train": {
-        "batch_size": 64,
-        "optimizer": "adam"
+        "learning_rate": 1e-3,
+        "batch_size": 128,
+        "optimizer": "adam",
+	"base_dir": "./res"
     },
     "model": {
         "block_num": 4,
@@ -10,8 +12,8 @@
     },
     "input": {
         "train": {
-            "HIS": "../data/input_data0508.HIS.csv",
-            "HS": "../data/input_data0508.HS.csv"
+            "HIS": "../data/input_data_usedinfirstsubmission.HIS.csv",
+            "HS": "../data/input_data_usedinfirstsubmission.HS.csv"
         }
     }
 }

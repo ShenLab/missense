@@ -30,6 +30,15 @@ HIS_fea_names = [
 def get_train_valiate(input_config, gene_type):
     path = input_config['train'][gene_type]
     df = pd.read_csv(path)
+    df = df.sample(frac=1.0).reset_index(drop=True)
+    
+    pos = df[df['target']==1]
+    neg = df[df['target']==0]
+    sub_sample=3
+    if pos.shape[0] < neg.shape[0]:
+        neg = neg.sample(min(neg.shape[0], pos.shape[0] * sub_sample))
+        df  = pd.concat([pos, neg], ignore_index=True, axis=0)
+    
     if gene_type == 'HIS':
         names = HIS_fea_names
     else:
@@ -49,4 +58,4 @@ def get_test(input_path, gene_type):
         names = HIS_fea_names
     else:
         names = HS_fea_names
-    return df[names].values, df['var_id'].values
+    return df[names].values, df['gnomad_exome'].values, df['var_id'].values

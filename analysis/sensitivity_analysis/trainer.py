@@ -33,7 +33,6 @@ class Trainer(object):
         input_ = Input(shape=(self.feature_dim, 1))
         x = Conv1D(filters, kernel_size, padding='same',
                    activation=activation)(input_)
-        print('block', block_num)
         for _ in range(block_num):
             y = Conv1D(filters,
                        kernel_size,
@@ -67,11 +66,13 @@ class Trainer(object):
             self.input_config, self.gene_type)
 
         batch_size = self.train_config.get('batch_size', 64)
+        print('train', train_data[0].shape[0], 'val', val_data[0].shape[0])
 
         model.fit(x=train_data[0],
                   y=train_data[1],
-                  batch_size=32,
+                  batch_size=batch_size,
                   epochs=256,
+                  shuffle=True,
                   validation_data=val_data,
                   callbacks=[early_stop_callback])
 

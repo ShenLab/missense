@@ -40,25 +40,31 @@ run() {
                 --output_path ${output_path} \
                 --gene_type ${gene_type} \
                 --model_path ${model_path}
-            python calc_rank_score.py \
-                --input_path ${output_path} \
-                --sample_path ${sample_path}
         done
     done
 
+    python ./combine_HIS_HS.py ${exp_dir}/sample_HIS_pred.csv ${exp_dir}/sample_HS_pred.csv ${exp_dir}/sample_pred.csv
+    
+
     for data in ASD CHD Control
     do
-        python ./combine_HIS_HS.py ${exp_dir}/${data}_HIS_pred.rank.csv \
-            ${exp_dir}/${data}_HS_pred.rank.csv \
-            ${exp_dir}/${data}_All_pred.rank.csv
+        python ./combine_HIS_HS.py ${exp_dir}/${data}_HIS_pred.csv \
+            ${exp_dir}/${data}_HS_pred.csv \
+            ${exp_dir}/${data}_All_pred.csv
+        
+        python calc_rank_score.py \
+            --input_path ${exp_dir}/${data}_All_pred.csv \
+            --sample_path ${exp_dir}/sample_pred.csv
+        
     done
     input_CHD_path=${exp_dir}/CHD_All_pred.rank.csv
     input_ASD_path=${exp_dir}/ASD_All_pred.rank.csv
     input_Control_path=${exp_dir}/Control_All_pred.rank.csv
     figure_dir=${exp_dir}/
     echo R CMD BATCH --no-save --no-restore "'--args chd_path=\"${input_CHD_path}\" asd_path=\"${input_ASD_path}\" control_path=\"${input_Control_path}\" block_num=\"${block_num}\" output_dir=\"${figure_dir}\"'" plot_figure_s.R
+    python ./calc_pvalue.py ${input_CHD_path} ${input_ASD_path} ${input_Control_path}
 }
 
-#run config_residual_block_16.json  res/residual_block_16
-run config_residual_block_8.json  res/residual_block_8 8
-run config_residual_block_4.json  res/residual_block_4 4
+#run config_residual_block_8.json  res/residual_block_8 8
+#run config_residual_block_4.json  res/residual_block_4 4
+run config_residual_block_2.json  res/residual_block_2 2

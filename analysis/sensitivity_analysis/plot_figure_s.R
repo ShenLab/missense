@@ -30,6 +30,8 @@ plotComparison <- function(x, y, zz, output_dir, method="", genes="All") {
 	legend("bottomleft", c("CHD", "ASD", "Controls"), col=c("red", "purple", "blue"), lwd=2)
 	wtest1 = wilcox.test(x, zz)
 	wtest2 = wilcox.test(y, zz)
+	print(wtest1)
+	print(wtest2)
 	legend("topleft", paste("CHD vs controls: p=", signif(wtest1$p.value, 2), "\n",  "ASD vs controls: p=", signif(wtest2$p.value, 2), sep=""), bty="n")
 	dev.off()
 
