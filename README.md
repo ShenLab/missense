@@ -15,8 +15,7 @@ code/4_get_MVP_prediction_for_all_missense_variants.ipynb: Generate MVP raw scor
 code/models.py: functions used in MVP model.
 
 # Precomputed MVP score (hg19)
-
-https://www.dropbox.com/s/d9we7gx42b7yatg/MVP_score_hg19.txt.bz2?dl=0
+The scores can be accessed through https://figshare.com/articles/dataset/Predicting_pathogenicity_of_missense_variants_by_deep_learning/13204118 or https://www.dropbox.com/s/d9we7gx42b7yatg/MVP_score_hg19.txt.bz2?dl=0.
 
 # citation
 This work is described in a preprint manuscript currently under peer-review:
