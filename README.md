@@ -21,4 +21,3 @@ The scores can be accessed through https://figshare.com/articles/dataset/Predict
 MVP predicts pathogenicity of missense variants by deep learning
 Qi H *, Zhang H *, Zhao Y *, Chen C *, Long JJ, Chung WK, Guan Y, Shen Y
 Nature Communications, accepted in 2020.
-This work is described in a preprint manuscript currently under peer-review:
