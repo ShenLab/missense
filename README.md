@@ -18,6 +18,4 @@ code/models.py: functions used in MVP model.
 The scores can be accessed through https://figshare.com/articles/dataset/Predicting_pathogenicity_of_missense_variants_by_deep_learning/13204118 or https://www.dropbox.com/s/d9we7gx42b7yatg/MVP_score_hg19.txt.bz2?dl=0.
 
 # citation
-MVP predicts pathogenicity of missense variants by deep learning
-Qi H *, Zhang H *, Zhao Y *, Chen C *, Long JJ, Chung WK, Guan Y, Shen Y
-Nature Communications, accepted in 2020.
+Qi H *, Zhang H *, Zhao Y *, Chen C *, Long JJ, Chung WK, Guan Y, Shen Y. MVP predicts the pathogenicity of missense variants by deep learning. Nat Commun 12, 510 (2021). https://doi.org/10.1038/s41467-020-20847-0
